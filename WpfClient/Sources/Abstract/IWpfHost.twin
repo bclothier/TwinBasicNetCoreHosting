@@ -1,0 +1,5 @@
+[ InterfaceId ("19B1E709-EBFD-4561-859D-CD38A8D575AF") ]
+Private Interface IWpfHost
+    Property Get Handle() As LongPtr
+    Sub Dispose()
+End Interface

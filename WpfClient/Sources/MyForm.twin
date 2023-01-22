@@ -1,0 +1,356 @@
+[ Description ("Demonstrates twinBASIC form hosting WPF contents") ]
+[ FormDesignerId ("5C8A622B-2421-4B98-86E0-388BA3FE825B") ]
+[ PredeclaredId ]
+Public Class MyForm
+    'Use this constant to show messageboxes for live builds for some diagnostics
+    #Const ShowDebugMessages = 0
+    
+    Private Enum HostingDelegateType
+        hdt_com_activation
+        hdt_load_in_memory_assembly
+        hdt_winrt_activation
+        hdt_com_register
+        hdt_com_unregister
+        hdt_load_assembly_and_get_function_pointer
+        hdt_get_function_pointer
+    End Enum
+
+    Private Type FunctionPtrs
+        hostfxr_initialize_for_runtime_config As LongPtr
+        hostfxr_get_runtime_delegate As LongPtr
+        hostfxr_close As LongPtr
+    End Type
+
+    Private Type TState
+        Manager As UniversalCaller
+        NetHostLibraryHandle As LongPtr
+        HostFrxLibraryHandle As LongPtr
+        ContextHandle As LongPtr
+        CreateFactoryDelegate As LongPtr
+    End Type
+    Private This As TState
+
+    /*
+    // Parameters for get_hostfxr_path
+    //
+    // Fields:
+    //   size
+    //     Size of the struct. This is used for versioning.
+    //
+    //   assembly_path
+    //     Path to the component's assembly.
+    //     If specified, hostfxr is located as if the assembly_path is the apphost
+    //
+    //   dotnet_root
+    //     Path to directory containing the dotnet executable.
+    //     If specified, hostfxr is located as if an application is started using
+    //     'dotnet app.dll', which means it will be searched for under the dotnet_root
+    //     path and the assembly_path is ignored.
+    //
+    struct get_hostfxr_parameters {
+        size_t size;
+        const char_t *assembly_path;
+        const char_t *dotnet_root;
+    };
+    */
+    Public Type get_hostfxr_parameters
+        size As LongPtr
+        assembly_path As LongPtr
+        dotnet_root As LongPtr
+    End Type
+
+    /*
+    //
+    // Get the path to the hostfxr library
+    //
+    // Parameters:
+    //   buffer
+    //     Buffer that will be populated with the hostfxr path, including a null terminator.
+    //
+    //   buffer_size
+    //     [in] Size of buffer in char_t units.
+    //     [out] Size of buffer used in char_t units. If the input value is too small
+    //           or buffer is nullptr, this is populated with the minimum required size
+    //           in char_t units for a buffer to hold the hostfxr path
+    //
+    //   get_hostfxr_parameters
+    //     Optional. Parameters that modify the behaviour for locating the hostfxr library.
+    //     If nullptr, hostfxr is located using the environment variable or global registration
+    //
+    // Return value:
+    //   0 on success, otherwise failure
+    //   0x80008098 - buffer is too small (HostApiBufferTooSmall)
+    //
+    // Remarks:
+    //   The full search for the hostfxr library is done on every call. To minimize the need
+    //   to call this function multiple times, pass a large buffer (e.g. PATH_MAX).
+    //
+    NETHOST_API int NETHOST_CALLTYPE get_hostfxr_path(
+        char_t * buffer,
+        size_t * buffer_size,
+        const struct get_hostfxr_parameters *parameters);
+    */
+    Private DeclareWide PtrSafe Function get_hostfxr_path Lib "nethost.dll" ( _
+        ByVal buffer As LongPtr, _ 
+        ByRef buffer_size As LongPtr, _ 
+        ByVal parameters As LongPtr /*ByRef parameters As get_hostfxr_parameters*/ _
+    ) As Long
+
+    Private DeclareWide PtrSafe Sub hostfxr_set_error_writer CDecl Lib "hostfxr.dll" ( _
+        ByVal error_writer As LongPtr _
+    )
+
+    /*
+    // Initializes the hosting components using a .runtimeconfig.json file
+    //
+    // Parameters:
+    //    runtime_config_path
+    //      Path to the .runtimeconfig.json file
+    //    parameters
+    //      Optional. Additional parameters for initialization
+    //    host_context_handle
+    //      On success, this will be populated with an opaque value representing the initialized host context
+    //
+    // Return value:
+    //    Success                            - Hosting components were successfully initialized
+    //    Success_HostAlreadyInitialized     - Config is compatible with already initialized hosting components
+    //    Success_DifferentRuntimeProperties - Config has runtime properties that differ from already initialized hosting components
+    //    CoreHostIncompatibleConfig         - Config is incompatible with already initialized hosting components
+    //
+    // This function will process the .runtimeconfig.json to resolve frameworks and prepare everything needed
+    // to load the runtime. It will only process the .deps.json from frameworks (not any app/component that
+    // may be next to the .runtimeconfig.json).
+    //
+    // This function does not load the runtime.
+    //
+    // If called when the runtime has already been loaded, this function will check if the specified runtime
+    // config is compatible with the existing runtime.
+    //
+    // Both Success_HostAlreadyInitialized and Success_DifferentRuntimeProperties codes are considered successful
+    // initializations. In the case of Success_DifferentRuntimeProperties, it is left to the consumer to verify that
+    // the difference in properties is acceptable.
+    //
+    typedef int32_t(HOSTFXR_CALLTYPE *hostfxr_initialize_for_runtime_config_fn)(
+        const char_t *runtime_config_path,
+        const struct hostfxr_initialize_parameters *parameters,
+        /* out * / hostfxr_handle *host_context_handle);
+    */
+    Private DeclareWide PtrSafe Function hostfxr_initialize_for_runtime_config CDecl Lib "hostfxr.dll" ( _
+        ByVal runtime_config_path As LongPtr, _ 
+        ByVal parameters As LongPtr, _ 
+        ByRef host_context_handle As LongPtr _ 
+    ) As Long
+
+    /*
+
+    //
+    // Gets a typed delegate from the currently loaded CoreCLR or from a newly created one.
+    //
+    // Parameters:
+    //     host_context_handle
+    //       Handle to the initialized host context
+    //     type
+    //       Type of runtime delegate requested
+    //     delegate
+    //       An out parameter that will be assigned the delegate.
+    //
+    // Return value:
+    //     The error code result.
+    //
+    // If the host_context_handle was initialized using hostfxr_initialize_for_runtime_config,
+    // then all delegate types are supported.
+    // If the host_context_handle was initialized using hostfxr_initialize_for_dotnet_command_line,
+    // then only the following delegate types are currently supported:
+    //     hdt_load_assembly_and_get_function_pointer
+    //     hdt_get_function_pointer
+    //
+    typedef int32_t(HOSTFXR_CALLTYPE *hostfxr_get_runtime_delegate_fn)(
+        const hostfxr_handle host_context_handle,
+        enum hostfxr_delegate_type type,
+        /*out* / void **delegate);
+
+    */
+    Private DeclareWide PtrSafe Function hostfxr_get_runtime_delegate CDecl Lib "hostfxr.dll" ( _
+        ByVal host_context_handle As LongPtr, _ 
+        ByVal type As HostingDelegateType, _ 
+        ByRef delegate As LongPtr _ 
+    ) As Long
+
+    /*
+    // Closes an initialized host context
+    //
+    // Parameters:
+    //     host_context_handle
+    //       Handle to the initialized host context
+    //
+    // Return value:
+    //     The error code result.
+    //
+    typedef int32_t(HOSTFXR_CALLTYPE *hostfxr_close_fn)(const hostfxr_handle host_context_handle);
+    */
+    Private DeclareWide PtrSafe Function hostfxr_close CDecl Lib "hostfxr.dll" ( _
+        ByVal host_context_handle As LongPtr _ 
+    ) As Long
+
+
+    ' FARPROC GetProcAddress(
+    '   [in] HMODULE hModule,
+    '   [in] LPCSTR  lpProcName
+    ' );
+    Private Declare PtrSafe Function GetProcAddress _
+    Lib "kernel32.dll" ( _
+        ByVal hModule As LongPtr, _
+        ByVal lpProcName As String _
+    ) As LongPtr
+
+    ' HMODULE LoadLibraryW(
+    '   [in] LPCWSTR lpLibFileName
+    ' );
+    Private DeclareWide PtrSafe Function LoadLibrary _
+    Lib "kernel32.dll" Alias "LoadLibraryW" ( _
+        ByVal lpLibFileName As String _
+    ) As LongPtr
+
+    ' LONG_PTR GetWindowLongPtrA(
+    '   [in] HWND hWnd,
+    '   [in] int  nIndex
+    ' );
+    Private DeclareWide PtrSafe Function GetWindowLongPtrW Lib "user32.dll" ( _
+        ByVal hWnd As LongPtr, _ 
+        ByVal nIndex As Long _ 
+    ) As LongPtr
+        
+	Public Sub New()
+	End Sub
+    
+    Private Sub Form_Load() Handles Form.Load
+        Dim AppPath As String = App.Path
+        Dim RuntimeConfigPath As String
+        Dim AssemblyPath As String
+        If App.IsInIDE Then
+            RuntimeConfigPath = AppPath & "\Build\WpfServer.runtimeconfig.json"
+            AssemblyPath = AppPath & "\Build\WpfServer.dll"
+        Else
+            RuntimeConfigPath = AppPath & "\WpfServer.runtimeconfig.json"
+            AssemblyPath = AppPath & "\WpfServer.dll"
+        End If
+        Dim TypeName As String = "WpfServer.WpfHostFactory, WpfServer"
+        Dim MethodName As String = "CreateWpfHostFactory"
+        Dim DelegateName As String = "WpfServer.WpfHostFactory+CreateWpfHostFactoryDelegate, WpfServer"
+        Dim Result As Long
+        
+        On Error GoTo ErrHandler
+        
+        If This.ContextHandle = 0 Then
+            If This.NetHostLibraryHandle = 0 Then
+                If App.IsInIDE Then
+                    This.NetHostLibraryHandle = LoadLibrary(App.Path & "\Build\nethost.dll")
+                Else
+                    This.NetHostLibraryHandle = LoadLibrary(App.Path & "\nethost.dll")
+                End If
+                If This.NetHostLibraryHandle = 0 Then
+                    MsgBox "NetHost handle not loaded"
+                    Exit Sub
+                End If
+            End If
+            
+            Dim buffer As String = Space$(260)
+            
+            Debug.Print get_hostfxr_path(StrPtr(buffer), Len(buffer), &h0)
+            Debug.Print buffer
+            
+            This.HostFrxLibraryHandle = LoadLibrary(buffer)
+            If This.HostFrxLibraryHandle = 0 Then
+                MsgBox "HostFrx handle not loaded"
+                Exit Sub
+            End If
+            
+            'The hostfxr_set_error_writer expects a cdecl callback. Therefore, we cannot use it in
+            'in the 32-bit mode which will be a stdcall procedure and thus corrupt the tack. By a 
+            'happy accident, 64-bit mode defaults to cdecl so we can "safely" callback our tB 
+            'procedure in this case. 
+            #If Win64 Then
+            hostfxr_set_error_writer(AddressOf ErrorWriter)
+            #End If
+            
+            Result = hostfxr_initialize_for_runtime_config(StrPtr(RuntimeConfigPath), 0, This.ContextHandle)
+            Debug.Print "ContextHandle", This.ContextHandle, Result
+            If This.ContextHandle = 0 Then
+                MsgBox "Context handle not loaded"
+                Exit Sub
+            End If
+            
+            Dim AssemblyDelegate As LongPtr
+            Result = hostfxr_get_runtime_delegate(This.ContextHandle, hdt_load_assembly_and_get_function_pointer, AssemblyDelegate)
+            Debug.Print "AssemblyDelegate", AssemblyDelegate, Result
+            If AssemblyDelegate = 0 Then
+                MsgBox "Assembly delegate not loaded: " & Result
+                Exit Sub
+            End If
+        End If
+        
+        If This.CreateFactoryDelegate = 0 Then
+            Set This.Manager = New UniversalCaller(This.HostFrxLibraryHandle, STRINGPARAMS_ENUM.STR_NONE, CALLINGCONVENTION_ENUM.CC_CDECL)
+            Result = This.Manager.CallDllFunction( _
+                AssemblyDelegate, _
+                CALLRETURNTUYPE_ENUM.CR_LONGLONG, _
+                StrPtr(AssemblyPath), _ 
+                StrPtr(TypeName), _ 
+                StrPtr(MethodName), _
+                StrPtr(DelegateName), _ 
+                CLngPtr(0), _ 
+                This.CreateFactoryDelegate)
+            Debug.Print "CreateFactoryDelegate:", This.CreateFactoryDelegate, Result
+            If This.CreateFactoryDelegate = 0 Then
+                MsgBox "Create factory delegate not loaded: " & Result
+                Exit Sub
+            End If
+        End If
+        
+        ShowDiagnostics ".NET Core loaded"
+        
+        Dim Factory As IWpfHostFactory
+        Set Factory = This.Manager.CallDllFunction( _
+            This.CreateFactoryDelegate, _
+            CALLRETURNTUYPE_ENUM.CR_OBJECT)
+        Debug.Print ObjPtr(Factory)
+        
+        ShowDiagnostics "Factory created"
+        
+        Dim Parameters As IWpfHostCreateParameters
+        Set Parameters = Factory.CreateParameters()
+        
+        ShowDiagnostics "Parameters created"
+        
+        Parameters.SetPosition(5, 5)
+        Parameters.SetSize(Me.PixelsWidth - 10, Me.PixelsHeight - 10)
+        Parameters.WindowStyle = (&H40000000& Or &H10000000&)
+        Parameters.ParentWindow = Me.hWnd
+        Parameters.HwndSourceHook = GetWindowLongPtrW(Me.hWnd, -4)
+        
+        ShowDiagnostics "Parameters populated"
+        
+        Dim Host As IWpfHost
+        Set Host = Factory.CreateHost(Parameters)
+        Debug.Print ObjPtr(Host)
+    
+        ShowDiagnostics "Host created"
+        
+        Exit Sub
+        
+    ErrHandler:
+        MsgBox "Error " & Err.Number & ": " & Err.Description
+    End Sub
+    
+    Private Sub Form_Terminate() Handles Form.Terminate
+        If This.ContextHandle Then
+            Debug.Print hostfxr_close(This.ContextHandle)
+        End If
+    End Sub
+
+    Private Sub ShowDiagnostics(Message As String)
+    	#If ShowDebugMessages Then
+        MsgBox Message
+        #End If
+    End Sub
+End Class

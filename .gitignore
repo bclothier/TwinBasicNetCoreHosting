@@ -348,3 +348,9 @@ MigrationBackup/
 
 # Ionide (cross platform F# VS Code tools) working folder
 .ionide/
+
+# twinBASIC Build Folder
+/Build/**
+
+# twinBASIC Project
+*.twinproj

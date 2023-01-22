@@ -1,0 +1,58 @@
+[ InterfaceId ("A4C1E9FC-BE79-4546-BD3D-AFA1093C4A27") ]
+Private Interface IWpfHostCreateParameters
+    Property Get WindowClassStyle() As Long
+    Property Let WindowClassStyle(ByVal RHS As Long)
+    
+    Property Get Width() As Long
+    Property Let Width(ByVal RHS As Long)
+        
+    Property Get UsesPerPixelTransparency() As Boolean
+    Property Let UsesPerPixelTransparency(ByVal RHS As Boolean)
+    
+    Property Get UsesPerPixelOpacity() As Boolean
+    Property Let UsesPerPixelOpacity(ByVal RHS As Boolean)
+    
+    Property Get TreatAsInputRoot() As Boolean
+    Property Let TreatAsInputRoot(ByVal RHS As Boolean)
+    
+    Property Get TreatAncestorsAsNonClientArea() As Boolean
+    Property Let TreatAncestorsAsNonClientArea(ByVal RHS As Boolean)
+    
+    Property Get RestoreFocusMode() As Long
+    Property Let RestoreFocusMode(ByVal RHS As Long)
+    
+    Property Get PositionY() As Long
+    Property Let PositionY(ByVal RHS As Long)
+    
+    Property Get PositionX() As Long
+    Property Let PositionX(ByVal RHS As Long)
+    
+    Property Get ParentWindow() As LongPtr
+    Property Let ParentWindow(ByVal RHS As LongPtr)
+    
+    Property Get HwndSourceHook() As LongPtr
+    Property Let HwndSourceHook(ByVal RHS As LongPtr)
+    
+    Property Get Height() As Long
+    Property Let Height(ByVal RHS As Long)
+    
+    Property Get HasAssignedSize() As Boolean
+    
+    Property Get ExtendedWindowStyle() As Long
+    Property Let ExtendedWindowStyle(ByVal RHS As Long)
+    
+    Property Get AdjustSizingForNonClientArea() As Boolean
+    Property Let AdjustSizingForNonClientArea(ByVal RHS As Boolean)
+    
+    Property Get AcquireHwndFocusInMenuMode() As Boolean
+    Property Let AcquireHwndFocusInMenuMode(ByVal RHS As Boolean)
+    
+    Property Get WindowName() As String
+    Property Let WindowName(ByVal RHS As String)
+    
+    Property Get WindowStyle() As Long
+    Property Let WindowStyle(ByVal RHS As Long)
+    
+    Sub SetPosition(ByVal x As Long, ByVal y As Long)
+    Sub SetSize(ByVal width As Long, ByVal height As Long)
+End Interface

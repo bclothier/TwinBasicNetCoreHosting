@@ -1,0 +1,5 @@
+[ InterfaceId ("1E43F347-4E45-42E7-88BF-088E53F428CB") ]
+Private Interface IWpfHostFactory
+    Function CreateParameters() As IWpfHostCreateParameters
+    Function CreateHost(ByVal parameters As IWpfHostCreateParameters) As IWpfHost
+End Interface
