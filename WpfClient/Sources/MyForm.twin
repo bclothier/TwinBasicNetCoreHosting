@@ -1,10 +1,14 @@
 [ Description ("Demonstrates twinBASIC form hosting WPF contents") ]
 [ FormDesignerId ("5C8A622B-2421-4B98-86E0-388BA3FE825B") ]
 [ PredeclaredId ]
+[ ClassId ("35439A35-F5FE-4C47-9F2F-7D4A1A1DE91E") ]
+[ EventInterfaceId ("C1B1A5B2-979E-409C-B573-7943971A4CCA") ]
 Public Class MyForm
+    Implements IWpfClient
+    
     'Use this constant to show messageboxes for live builds for some diagnostics
     #Const ShowDebugMessages = 0
-    
+
     Private Enum HostingDelegateType
         hdt_com_activation
         hdt_load_in_memory_assembly
@@ -30,6 +34,7 @@ Public Class MyForm
     End Type
     Private This As TState
 
+    Private WithEvents Host As WpfHost
     /*
     // Parameters for get_hostfxr_path
     //
@@ -330,12 +335,12 @@ Public Class MyForm
         
         ShowDiagnostics "Parameters populated"
         
-        Dim Host As IWpfHost
         Set Host = Factory.CreateHost(Parameters)
         Debug.Print ObjPtr(Host)
     
         ShowDiagnostics "Host created"
-        
+
+        Host.Advise(Me)
         Exit Sub
         
     ErrHandler:
@@ -352,5 +357,24 @@ Public Class MyForm
     	#If ShowDebugMessages Then
         MsgBox Message
         #End If
+    End Sub
+    
+    Private Sub Host_MouseDown() Handles Host.MouseDown
+        MsgBox "Mouse down"
+    End Sub
+    
+    Public Sub SetSize(ByVal Width As Long, ByVal Height As Long) Implements IWpfClient.SetSize
+    End Sub
+    
+    Public Event Resize(ByVal Width As Long, ByVal Height As Long)
+    Private Sub Form_Resize() Handles Form.Resize
+        RaiseEvent Resize(Me.PixelsWidth, Me.PixelsHeight)
+    End Sub
+    
+    Public Event Unload(ByRef Cancel As Boolean)
+    Private Sub Form_Unload(Cancel As Integer) Handles Form.Unload
+        Dim _Cancel As Boolean = Cancel
+        RaiseEvent Unload(_Cancel)
+        Cancel = _Cancel
     End Sub
 End Class

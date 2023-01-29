@@ -12,24 +12,4 @@ namespace WpfServer
         IWpfHostCreateParameters CreateParameters();
         IWpfHost CreateHost(IWpfHostCreateParameters parameters);
     }
-
-    /*
-    public static class WpfHostFactory
-    {
-        [return: MarshalAs(UnmanagedType.IUnknown)]
-        public delegate object CreateParametersDelegate();
-        public static object CreateParameters()
-        {
-            return new WpfHostCreateParameters();
-        }
-
-        [return: MarshalAs(UnmanagedType.IUnknown)]
-        public delegate object CreateHostDelegate([MarshalAs(UnmanagedType.IUnknown)] IWpfHostCreateParameters parameters);
-        public static object CreateHost(IWpfHostCreateParameters parameters)
-        {
-            var _parameters = parameters as WpfHostCreateParameters;
-            return new WpfHost(_parameters.HwndSourceParameters());
-        }
-    }
-    */
 }

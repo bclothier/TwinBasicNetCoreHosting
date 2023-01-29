@@ -67,7 +67,7 @@ namespace WpfServer
         public int ExtendedWindowStyle { get; set; }
         public bool AdjustSizingForNonClientArea { get; set; }
         public bool AcquireHwndFocusInMenuMode { get; set; }
-        public string WindowName { get; set; }
+        public string WindowName { get; set; } = string.Empty;
         public int WindowStyle { get; set; }
 
         public void SetPosition(int x, int y)
@@ -103,24 +103,4 @@ namespace WpfServer
             WindowStyle = WindowStyle
         };
     }
-
-    /*
-    public static class WpfHostFactory
-    {
-        [return: MarshalAs(UnmanagedType.IUnknown)]
-        public delegate object CreateParametersDelegate();
-        public static object CreateParameters()
-        {
-            return new WpfHostCreateParameters();
-        }
-
-        [return: MarshalAs(UnmanagedType.IUnknown)]
-        public delegate object CreateHostDelegate([MarshalAs(UnmanagedType.IUnknown)] IWpfHostCreateParameters parameters);
-        public static object CreateHost(IWpfHostCreateParameters parameters)
-        {
-            var _parameters = parameters as WpfHostCreateParameters;
-            return new WpfHost(_parameters.HwndSourceParameters());
-        }
-    }
-    */
 }

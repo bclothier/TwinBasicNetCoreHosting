@@ -6,7 +6,7 @@
     <Nullable>enable</Nullable>
     <UseWpf>true</UseWpf>
     <EnableDynamicLoading>true</EnableDynamicLoading>
-    <Platforms>AnyCPU;x64</Platforms>
+    <Platforms>x64</Platforms>
   </PropertyGroup>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">

@@ -1,5 +1,18 @@
 [ InterfaceId ("19B1E709-EBFD-4561-859D-CD38A8D575AF") ]
-Private Interface IWpfHost
+Interface IWpfHost
+    Sub Advise(Client As Object)
     Property Get Handle() As LongPtr
     Sub Dispose()
 End Interface
+
+[ InterfaceId ("7F18FA39-1108-4E7F-A8C1-90BB30E96E71") ]
+Interface IWpfHostEvents
+    [ DispId (1) ]
+    Sub MouseDown()
+End Interface
+
+[ CoClassId ("19B1E709-EBFD-4561-859D-CD38A8D575AF") ]
+CoClass WpfHost
+    [ Default ] Interface IWpfHost
+    [ Default, Source ] Interface IWpfHostEvents
+End CoClass

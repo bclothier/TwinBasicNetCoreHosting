@@ -5,7 +5,7 @@
 		"AutoRedraw": false,
 		"BackColor": -2147483633,
 		"BorderStyle": "vbSizable",
-		"Caption": null,
+		"Caption": "WpfClient Window",
 		"ClipControls": true,
 		"ControlBox": true,
 		"DrawMode": "vbCopyPen",
@@ -76,7 +76,7 @@
 			"showGrid": true,
 			"showOutlines": false
 		},
-		"__lastUpdateMarker": 1179649160,
+		"__lastUpdateMarker": 1833951403,
 		"_className": "Form",
 		"_clsid": "{33AD4F38-6699-11CF-B70C-00AA0060D393}"
 	}

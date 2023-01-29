@@ -1,0 +1,13 @@
+[ InterfaceId ("C1B1A5B2-979E-409C-B573-7943971A4CC8") ]
+Public Interface IWpfClient
+    [ DispId (1) ]
+    Sub SetSize(ByVal Width As Long, ByVal Height As Long)
+End Interface
+
+[ InterfaceId ("C1B1A5B2-979E-409C-B573-7943971A4CCA") ]
+Public Interface IWpfClientEvents
+    [ DispId (1) ]
+    Sub Resize(ByVal Width As Long, ByVal Height As Long)
+    [ DispId (2) ]
+    Sub Unload(ByRef Cancel As Boolean)
+End Interface
